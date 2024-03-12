@@ -1,33 +1,74 @@
-const posts = [];
+const Post = require("../models/posts");
 
 exports.createPost = (req, res) => {
   const { title, description, photo } = req.body;
-  console.log(`title is ${title} & description is ${description}`);
-  posts.push({
-    id: Math.random(),
+  Post.create({
     title,
     description,
-    photo
-  });
-  console.log(posts);
-  res.redirect("/");
+    imgUrl: photo,
+  })
+    .then((result) => {
+      console.log(result);
+      console.log("New Post Create");
+      res.redirect("/");
+    })
+    .catch((err) => console.log(err));
 };
 
 exports.renderCreatePost = (req, res) => {
-  // res.sendFile(path.join(__dirname, "..", "views", "create-post.html"));
   res.render("create", { title: "Create" });
 };
 
-exports.renderHomePage = (req, res) => {
-  // console.log(posts);
-  // res.sendFile(path.join(__dirname, "..", "views", "home-page.html"));
-  res.render("home", { title: "Hello La", postArr: posts });
+exports.getPosts = (req, res) => {
+  Post.findAll({ order: [["title", "DESC"]] })
+    .then((posts) => {
+      res.render("home", { title: "Home Page", postArr: posts });
+    })
+    .catch((err) => console.log(err));
 };
 
 exports.getPost = (req, res) => {
-  const postId = Number(req.params.postId);
-  console.log(postId)
-  const post = posts.find((post) => post.id === postId);
-  console.log(post)
-  res.render("details", { title: "Detail Page", post });
+  const id = Number(req.params.id);
+  Post.findByPk(id)
+    .then((post) => res.render("details", { title: "Detail Page", post: post }))
+    .catch((err) => console.log(err));
 };
+
+exports.deletePost = (req, res) => {
+  const id = req.params.id;
+  Post.findByPk(id)
+    .then((post) => {
+      if (!post) {
+        res.redirect("/");
+      }
+      return post.destroy();
+    })
+    .then((result) => {
+      console.log("Post deleted!");
+      res.redirect("/");
+    })
+    .catch((err) => console.log(err));
+};
+
+exports.getOldPost = (req, res) => {
+  const id = req.params.id;
+  Post.findByPk(id)
+    .then((post) => {
+      res.render("edit", { title: `${post.title}`, post });
+    })
+    .catch((err) => console.log(err));
+};
+
+
+exports.updatePost = (req, res)=>{
+  const {title, description, imgUrl, id}  = req.body;
+  Post.findByPk(id).then((post)=>{
+    (post.title = title),
+    (post.description = description),
+    (post.imgUrl = imgUrl);
+    post.save();
+    res.redirect("/");
+  }).then((result)=>{
+    console.log(`Post Id is ${id} is updated successfully`)
+  }).catch((err)=>console.log(err))
+}

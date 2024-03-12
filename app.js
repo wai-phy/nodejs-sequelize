@@ -1,12 +1,14 @@
 const express = require("express");
 const path = require("path");
+
 const bodyParser = require("body-parser");
+
+const sequelize = require("./utils/database");
 
 const app = express();
 
 app.set("view engine", "ejs");
 app.set("views", "views");
-
 
 const postRoutes = require("./routes/post");
 const adminRoute = require("./routes/admin");
@@ -26,4 +28,10 @@ app.use("/admin", (req, res, next) => {
 app.use(postRoutes);
 app.use("/admin", adminRoute);
 
-app.listen(8080);
+sequelize
+  .sync()
+  .then((result) => {
+    console.log(result);
+    app.listen(8080);
+  })
+  .catch((err) => console.log(err));
