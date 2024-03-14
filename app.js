@@ -5,6 +5,9 @@ const bodyParser = require("body-parser");
 
 const sequelize = require("./utils/database");
 
+const Post = require("./models/post");
+const User = require("./models/user");
+
 const app = express();
 
 app.set("view engine", "ejs");
@@ -25,13 +28,35 @@ app.use("/admin", (req, res, next) => {
   next();
 });
 
+app.use((req, res, next) => {
+  User.findByPk(1)
+    .then((user) => {
+      req.user = user;
+      console.log(user);
+      next();
+    })
+    .catch((err) => console.log(err));
+});
+
 app.use(postRoutes);
 app.use("/admin", adminRoute);
 
+Post.belongsTo(User, { constraints: true, onDelete: "CASCADE" });
+User.hasMany(Post);
+
 sequelize
   .sync()
-  .then((result) => {
-    console.log(result);
+  .then(() => {
+    return User.findByPk(1);
+  })
+  .then((user) => {
+    if (!user) {
+      return User.create({ name: "Hefefoe", email: "waitr.com" });
+    }
+    return user;
+  })
+  .then((user) => {
+    console.log(user);
     app.listen(8080);
   })
   .catch((err) => console.log(err));
